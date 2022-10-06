@@ -1,0 +1,280 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="com.arkea.aicbackoffice" default="help" basedir=".">
+  <property name="app.name" value="com.arkea.aicbackoffice"/>
+  <!--
+    ** Chargement des propriétés
+    ****************************************************************
+    -->
+  <!-- Proprietes du projets local (dev) app.env, app.site -->
+  <property file="${basedir}/build.properties"/>
+  <!-- Proprietes globales pour tous les projets (.ivy2...), javac -->
+  <property file="${user.home}/build.properties"/>
+  <setproxy proxyhost="proxy.gicm.net" proxyport="3128"/>
+  <property name="src.home" location="${basedir}/src"/>
+  <property name="test.home" location="${basedir}/tests"/>
+  <property name="ant.fragments.dir" location="${basedir}/ant"/>
+  <property name="ivy.module.name" value="${ant.project.name}"/>
+  <property name="java.fork" value="no"/>
+  <property name="javac.fork" value="yes"/>
+  <property name="javac.version" location="${jdk.home}/bin/javac" />
+  <property name="jvm.version" location="${jdk.home}/bin/java" />
+  <!-- web -->
+  <property name="web.dir" value="${basedir}/war"/>
+  <property name="ressources.arkea" value="generated"/>
+  <property name="webinf.dir" value="${web.dir}/WEB-INF"/>
+  <property name="lib.dir" value="${web.dir}/WEB-INF/lib"/>
+  <property name="compil.dir" value="${web.dir}/WEB-INF/classes"/>
+  <property name="properties.dir" value="${compil.dir}"/>
+  <property name="docker.properties.dir" value="${web.dir}/WEB-INF/confs"/>
+  <property name="gwt.app" value="AICBackOffice"/>
+  <property name="gwt.jvm.memory" value="1024M"/>
+  <property name="gwt.module" value="${ivy.module.name}.${gwt.app}"/>
+  <property name="gwt.module.shortname" value="${gwt.app}"/>
+  <property name="gwt.args" value="-logLevel INFO"/>
+  <property name="thrift.gwt" value="true"/>
+  <property name="thrift.deps" value="thrift.deps"/>
+  <property name="build.dir" value="${basedir}/build"/>
+  <property name="dist.home" value="${basedir}/dist"/>
+  <property name="junit.output.dir" value="${basedir}/junit"/>
+  <!-- DO NOT REMOVE Marker Build VARIABLE -->
+  <!-- web -->
+  <property name="web.dir" value="${basedir}/war"/>
+  <property name="ressources.arkea" value="generated"/>
+  <property name="webinf.dir" value="${web.dir}/WEB-INF"/>
+  <property name="lib.dir" value="${web.dir}/WEB-INF/lib"/>
+  <property name="compil.dir" value="${web.dir}/WEB-INF/classes"/>
+  <property name="properties.dir" value="${compil.dir}"/>
+  <property name="docker.properties.dir" value="${web.dir}/WEB-INF/confs"/>
+  <property name="devmode.debug.enable" value="true" description="launch the devmode in debug mode"/>
+  <property name="gwt.compilereport" value="" description="generate story of your compilation when set to -compileReport (default value is empty)"/>
+  <property name="ivy.snapshot" value="snapshot"/>
+  <!-- Thrift -->
+  <property name="thrift" value="${basedir}/thrift"/>
+  <property name="thrift.deps" value="${basedir}/thrift.deps"/>
+  <property name="thrift.generated" value="${basedir}/thrift.generated"/>
+  <property name="libthrift.version" value="0.9.3"/>
+  <!-- Needs ant-contrib for 'for' loop -->
+  <typedef resource="net/sf/antcontrib/antlib.xml" classpath="${ant.library.dir}/ant-contrib-1.0b3.jar"/>
+  <!--
+	  ** Retrieve and Load Ivy Arkéa Global Configuration
+	-->
+  <get dest="ivysettings.xml" src="http://ivy.intra.arkea.com:8080/repo/settings/ivysettings.xml" ignoreerrors="true"/>
+  <ivy:configure file="ivysettings.xml"/>
+  <ivy:retrieve organisation="arkea.ant" module="com.arkea.ant.ivy" inline="true" revision="0.27" pattern="${ant.fragments.dir}/[artifact].[ext]" conf="ant"/>
+  <!--
+    ** Import in this build file the build fragments obtain previously
+    -->
+  <import file="${ant.fragments.dir}/com.arkea.ant.ivy.xml" optional="true"/>
+  <import file="${ant.fragments.dir}/com.arkea.ant.gwt.xml" optional="true"/>
+  <import file="${ant.fragments.dir}/com.arkea.ant.sonar.xml" optional="true"/>
+  <import file="${ant.fragments.dir}/com.arkea.commons.ant.archetypes.gwt.xml" optional="true"/>
+  <import file="${ant.fragments.dir}/com.arkea.ant.thrift.xml" optional="true"/>
+  <!-- DO NOT REMOVE Marker Build IMPORT -->
+  <!--
+	 ** Define the classpath for this project 
+	-->
+  <path id="project.class.path">
+    <pathelement location="war/WEB-INF/classes"/>
+    <!-- Add any additional non-server libs (such as JUnit) -->
+    <fileset dir="${basedir}/dependencies" includes="**/*.jar"/>
+    <fileset dir="war/WEB-INF/lib" includes="**/*.jar"/>
+  </path>
+  <!--
+	 ** Define the classpath for building the application under BF 
+	-->
+  <path id="build.class.path">
+    <pathelement location="${build.dir}/WEB-INF/classes"/>
+    <!-- Add any additional non-server libs (such as JUnit) -->
+    <fileset dir="${basedir}/dependencies" includes="**/*.jar"/>
+    <fileset dir="${build.dir}/WEB-INF/lib" includes="**/*.jar"/>
+  </path>
+  <!--
+   ** First step in BF process
+  -->
+  <target name="prepare" depends="retrieve,confenv" description="prepare">
+    <antcall target="com.arkea.ant.gwt.prepare"/>
+  </target>
+  <!--
+	   Vous pouvez mettre en place une aide si besoin
+	-->
+  <target name="help">
+    <echo message="Aide &#xE0; compl&#xE9;ter"/>
+  </target>
+  <!--
+	   ** Configuration de l'environnement local (properties...)
+	    -->
+  <target name="confenv_local">
+    
+  </target>
+  <target name="confenv">
+    <sequential>
+      <if>
+        <isset property="build.dir"/>
+        <then>
+          <property name="prop.d" value="${build.dir}/WEB-INF/confs"/>
+        </then>
+      </if>
+      <if>
+        <isset property="build.home"/>
+        <then>
+          <property name="prop.d" value="${build.home}/WEB-INF/confs"/>
+        </then>
+      </if>
+      <copy todir="${prop.d}" overwrite="true" preservelastmodified="false" failonerror="false">
+        <fileset dir="${basedir}/confs" casesensitive="yes"/>
+      </copy>
+    </sequential>
+  </target>
+  <!--
+	  ** Retrieve ivy configuration from ivy/modules/module-ivy.xml and put them at right place
+	-->
+  <target name="retrieve" description="retrieve default configuration for the project + compile time dependencies">
+    <retrieve conf="default" type="jar,bundle" todir="${basedir}/war/WEB-INF/lib" module="${ivy.module.name}" pattern="[artifact]-[revision].[ext]"/>
+    <retrieve conf="default" type="thrift" todir="${thrift.deps}" module="${ivy.module.name}" pattern="[artifact].[ext]"/>
+    <retrieve conf="default" type="sources" todir="${basedir}/dependencies/sources" module="${ivy.module.name}" pattern="[artifact]-[revision].[ext]"/>
+    <retrieve conf="devel" type="jar,javadoc" todir="${basedir}/dependencies" module="${ivy.module.name}"/>
+    <retrieve conf="ant" type="ant" todir="${ant.fragments.dir}" module="${ivy.module.name}" pattern="[artifact].[ext]"/>
+    <retrieve conf="ant" type="jar" todir="${ant.fragments.dir}/lib" module="${ivy.module.name}" pattern="[artifact].[ext]"/>
+    <manageArkeaResources repertoireprojet="${web.dir}" repertoireDestination="${ressources.arkea}"/>
+  </target>
+  <!-- ========================= Thrift Delete Target ============================ -->
+  <!--
+		  ** Delete thrift files (*.thrift) in thrift directory
+		 -->
+  <target name="thrift-clean" description="delete thrift files">
+    <delete dir="${thrift}/.checksum"/>
+    <delete dir="${thrift.deps}"/>
+    <delete dir="${thrift.generated}"/>
+    <mkdir dir="${thrift.deps}"/>
+    <mkdir dir="${thrift.generated}"/>
+  </target>
+  <!-- ========================= Thrift Target ============================ -->
+  <!--
+	  ** Retrieve dependencies, generate thrift file and create the gwt thrift module
+	  ** Thrift java files are obtain through ThriftBlackBox .
+	 -->
+  <target name="thrift" description="create Thrift java file and Thrift gwt module">
+    <if>
+      <not>
+        <available file="${basedir}\thrift.generated" type="dir"/>
+      </not>
+      <then>
+        <mkdir dir="${basedir}\thrift.generated"/>
+      </then>
+    </if>
+    <thrift thrift.version="${libthrift.version}" force="true" thrift.gen.args="java:beans,doc"/>
+  </target>
+  <!--
+	    ** Retrieve dependencies,
+	    ** Create Thrift file, compile them, create the GWT Thrift module, compile the java files from sources
+	    ** and Finally launch DevMode
+	    -->
+  <target name="run-devmode" depends="confenv_local" description="launch GWT devmode">
+    <macroCompilationThrift thrift.build.dir="war/WEB-INF/classes"/>
+    <macrojavac/>
+    <devmode debug.enable="${devmode.debug.enable}"/>
+  </target>
+  <!--
+	  ** Override compile target of fragement which is step 2 in BF process
+	  ** Create Thrift file, compile them, create the GWT Thrift module, compile the java files from sources
+	  ** And finally compile the java file with the GWT compiler.
+	  ** Everything is put into a build directory prior to be package by the dist target which
+	  ** is the final step of BF 
+	  -->
+  <target name="compile" description="compilation">
+    <macroCompilationThrift/>
+    <!--<macrojavac javac.classes.dir="${build.dir}/WEB-INF/classes" class.path="build.class.path" />-->
+    <javac destdir="${build.dir}/WEB-INF/classes" debug="false" fork="true" target="1.8" encoding="UTF-8" executable="${javac.version}" deprecation="${compile.deprecation}">
+      <classpath refid="build.class.path"/>
+      <src>
+        <pathelement location="${src.home}/com/arkea/aicbackoffice/server"/>
+        <pathelement location="${src.home}/com/arkea/aicbackoffice/shared"/>
+      </src>
+    <compilerarg line="-processorpath ${build.dir}/WEB-INF/lib/mapstruct-processor-1.1.0.Final.jar"/>
+    <compilerarg line="-s mapstruct_generated"/>
+    </javac>
+    <macrogwt-local-compile gwtc.module="${gwt.module}" class.path="build.class.path" gwtc.args="${gwt.compilereport} -war ${build.dir}"/>
+  </target>
+  <!-- Cette dernière tache de compilation ne fait que 2 permutations -->
+  <target name="compile-IC">
+    <macroCompilationThrift/>
+    <macrojavac javac.classes.dir="${build.dir}/WEB-INF/classes" class.path="build.class.path"/>
+    <macrogwt-local-compile gwtc.module="${gwt.module}Light" class.path="build.class.path" gwtc.args="${gwt.compilereport} -war ${build.dir} -draftCompile"/>
+  </target>
+  <!-- Macro de compilatio ndes services thrift -->
+  <macrodef name="macroCompilationThrift">
+    <attribute name="force" default="false"/>
+    <attribute name="thrift.build.dir" default="${build.dir}/WEB-INF/classes"/>
+    <sequential>
+      <if>
+        <isset property="thrift.compiler"/>
+        <then>
+          <thrift target="thrift.generated" force="@{force}" src="${thrift.deps}" thrift.version="${libthrift.version}" thrift.gen.args="java:beans,doc"/>
+          <macrothriftjavac thrift.build.dir="@{thrift.build.dir}"/>
+        </then>
+      </if>
+    </sequential>
+  </macrodef>
+  <!-- Distribution du WAR -->
+  <target name="dist" description="distribution de l'application">
+    <antcall target="com.arkea.ant.gwt.dist"/>
+  </target>
+  <!-- TESTS -->
+  <target name="run-tests" depends="prepare,compile">
+    <delete dir="${junit.output.dir}" failOnError="false"/>
+    <mkdir dir="${junit.output.dir}"/>
+    <!-- client testing -->
+    <junit fork="yes" printsummary="withOutAndErr">
+      <jvmarg line="-Dgwt.args=&quot;-out www-test&quot;"/>
+      <formatter type="xml"/>
+      <test name="com.arkea.aicbackoffice.AllTests" todir="${junit.output.dir}"/>
+      <classpath>
+        <pathelement location="war/WEB-INF/classes"/>
+        <path refid="project.class.path"/>
+        <pathelement location="${gwt.src.dir}"/>
+        <pathelement location="${test.home}"/>
+      </classpath>
+    </junit>
+    <!--  serveur testing -->
+    <junit fork="yes" printsummary="withOutAndErr">
+      <formatter type="xml"/>
+      <test name="com.arkea.aicbackoffice.server.AllTests" todir="${junit.output.dir}"/>
+      <classpath>
+        <pathelement location="war/WEB-INF/classes"/>
+        <path refid="project.class.path"/>
+        <pathelement location="${gwt.src.dir}"/>
+        <pathelement location="${test.home}"/>
+      </classpath>
+    </junit>
+  </target>
+  <!-- ==================== Clean Target ==================================== -->
+  <!--
+		  The "clean" target deletes any previous "build" and "dist" directory,
+		  so that you can be ensured the application can be built from scratch.
+		-->
+  <target name="clean" description="clean">
+    <delete dir="${build.dir}" failOnError="false"/>
+    <delete dir="${dist.home}" failOnError="false"/>
+    <delete dir="${compil.dir}" failOnError="false"/>
+    <delete dir="${web.dir}/${ressources.arkea}" failOnError="false"/>
+    <delete dir="${basedir}/.sonar" failOnError="false"/>
+    <if>
+      <isset property="thrift.compiler"/>
+      <then>
+        <antcall target="thrift-clean"/>
+      </then>
+    </if>
+    <antcall target="clean-libs"/>
+  </target>
+  <!-- Supression des bibliotheques -->
+  <target name="clean-libs" description="clean-libs">
+    <delete failOnError="false">
+      <fileset dir="${basedir}/dependencies" includes="**/*.jar"/>
+      <fileset dir="${basedir}/war/WEB-INF/lib" includes="**/*.jar"/>
+      <fileset dir="${ant.fragments.dir}/lib" includes="**/*.jar"/>
+      <fileset dir="${ant.fragments.dir}" includes="*.xml"/>
+    </delete>
+  </target>
+  <target name="list-all-properties">
+    <echoproperties/>
+  </target>
+</project>
